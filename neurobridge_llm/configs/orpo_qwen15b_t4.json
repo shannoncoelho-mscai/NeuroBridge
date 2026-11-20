@@ -1,0 +1,18 @@
+{
+  "run_name": "sft_orpo_v1",
+  "base_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "sft_adapter": "runs/sft_v2_12k/adapter",
+  "sft_run": "runs/sft_v2_12k",
+  "pairs": "data/preferences/pairs_auto_v1.jsonl",
+  "comparison": "runs/eval/report/comparison.json",
+  "human_scores": "runs/eval/human_scores.json",
+  "sft_tag": "sft_v2_12k",
+  "base_tag": "base",
+  "output_dir": "runs/sft_orpo_v1",
+  "seed": 42,
+  "max_length": 1024,
+  "lambda": 0.1,
+  "training": {"epochs": 1, "batch_size": 1, "grad_accum": 8, "learning_rate": 0.00001,
+               "scheduler": "cosine", "warmup_ratio": 0.1},
+  "_notes": "lambda=0.1 and LR 1e-5 follow the ORPO paper's LoRA-scale settings; 300 pairs x 2 sequences each on a T4 is ~20-30 min."
+}

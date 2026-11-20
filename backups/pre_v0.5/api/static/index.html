@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NeuroBridge</title>
+<link rel="icon" href="data:,">
+<style>
+  :root {
+    --bg: #f6f5f2; --panel: #ffffff; --ink: #1f2a2e; --muted: #5d6b70; --line: #e2e0da;
+    --accent: #2f6f6a; --accent-ink: #ffffff; --warn: #9a5b00; --warn-bg: #fff4e0;
+    --bad: #a3322b; --bad-bg: #fdecea; --good: #1f6b3a; --good-bg: #e7f5ec; --info-bg: #eaf1f1;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+         background: var(--bg); color: var(--ink); }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px;
+           background: var(--panel); border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; letter-spacing: .2px; }
+  header .sub { color: var(--muted); font-size: 13px; }
+  #health { margin-left: auto; font-size: 12px; color: var(--muted); }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px;
+         vertical-align: middle; }
+  nav { display: flex; gap: 4px; padding: 0 20px; background: var(--panel);
+        border-bottom: 1px solid var(--line); }
+  nav button { border: 0; background: none; padding: 10px 14px; font: inherit; cursor: pointer;
+               color: var(--muted); border-bottom: 2px solid transparent; }
+  nav button.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  main { max-width: 1100px; margin: 0 auto; padding: 18px 20px 90px; }
+  .settings { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; font-size: 13px;
+              color: var(--muted); align-items: center; }
+  .settings input, .settings select { font: inherit; padding: 4px 8px; border: 1px solid var(--line);
+              border-radius: 6px; background: var(--panel); }
+  .panel { background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+           padding: 14px 16px; margin-bottom: 14px; }
+  .panel h3 { margin: 0 0 8px; font-size: 14px; text-transform: uppercase; letter-spacing: .5px;
+              color: var(--muted); }
+  textarea, input[type=text], input[type=number] { width: 100%; font: inherit; padding: 8px 10px;
+              border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+  textarea { resize: vertical; min-height: 64px; }
+  .row { display: flex; gap: 10px; align-items: flex-start; }
+  .row > * { flex: 1; }
+  .row select { font: inherit; padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border: 0; border-radius: 8px;
+                   padding: 9px 16px; font: inherit; font-weight: 600; cursor: pointer; flex: 0 0 auto; }
+  button.primary:disabled { opacity: .5; cursor: wait; }
+  button.ghost { background: none; border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px;
+                 font: inherit; cursor: pointer; }
+  #chatlog { display: flex; flex-direction: column; gap: 10px; min-height: 240px; max-height: 55vh;
+             overflow-y: auto; padding: 4px; }
+  .msg { max-width: 80%; padding: 10px 12px; border-radius: 10px; white-space: pre-wrap; }
+  .msg.user { align-self: flex-end; background: var(--info-bg); }
+  .msg.bot { align-self: flex-start; background: #fff; border: 1px solid var(--line); }
+  .msg .meta { font-size: 11px; color: var(--muted); margin-top: 6px; }
+  .badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px;
+           border-radius: 999px; background: var(--info-bg); color: var(--accent); }
+  .badge.good { background: var(--good-bg); color: var(--good); }
+  .badge.warn { background: var(--warn-bg); color: var(--warn); }
+  .badge.bad { background: var(--bad-bg); color: var(--bad); }
+  .answer { white-space: normal; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  @media (max-width: 800px) { .grid { grid-template-columns: 1fr; } .msg { max-width: 95%; } }
+  ul.clean { list-style: none; padding: 0; margin: 0; }
+  ul.clean li { padding: 6px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  ul.clean li:last-child { border-bottom: 0; }
+  .src a { color: var(--accent); word-break: break-all; }
+  .small { font-size: 12px; color: var(--muted); }
+  .trace { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+           max-height: 320px; overflow-y: auto; }
+  .trace div { padding: 2px 0; border-bottom: 1px dotted var(--line); }
+  .phase { display: inline-block; min-width: 78px; color: var(--accent); font-weight: 600; }
+  .alert { border-radius: 8px; padding: 10px 12px; margin-bottom: 10px; }
+  .alert.bad { background: var(--bad-bg); color: var(--bad); }
+  .alert.warn { background: var(--warn-bg); color: var(--warn); }
+  .approval { border: 1px solid var(--warn); background: var(--warn-bg); border-radius: 8px;
+              padding: 10px 12px; margin-bottom: 8px; }
+  .hidden { display: none; }
+  .md h1, .md h2, .md h3, .md h4 { font-size: 15px; margin: 10px 0 4px; }
+  .md p { margin: 6px 0; }
+  .md ul, .md ol { margin: 4px 0 4px 20px; padding: 0; }
+  .md table { border-collapse: collapse; margin: 8px 0; font-size: 14px; }
+  .md th, .md td { border: 1px solid var(--line); padding: 4px 8px; text-align: left; vertical-align: top; }
+  .md th { background: var(--info-bg); }
+  .md code { background: var(--info-bg); padding: 1px 4px; border-radius: 4px; }
+  .md hr { border: 0; border-top: 1px solid var(--line); margin: 10px 0; }
+  .msg.bot { white-space: normal; }
+  .cmp { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; width: 100%; }
+  .cmp .col { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; background: #fff; }
+  .cmp .col h5 { margin: 0 0 6px; font-size: 13px; color: var(--accent); }
+  footer { position: fixed; bottom: 0; left: 0; right: 0; background: var(--panel);
+           border-top: 1px solid var(--line); padding: 8px 20px; font-size: 12px; color: var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>NeuroBridge</h1>
+  <span class="sub">Caregiver-support assistant</span>
+  <span id="health">Checking…</span>
+</header>
+<nav>
+  <button data-tab="chat" class="active">Chat</button>
+  <button data-tab="agent">Research agent</button>
+  <button data-tab="events">Events &amp; groups</button>
+  <button data-tab="booking">Appointments</button>
+</nav>
+<main>
+  <div class="settings">
+    <label>Language
+      <select id="lang">
+        <option value="">Auto-detect</option>
+        <option value="en">English</option><option value="hi">Hindi</option>
+        <option value="kok">Konkani</option><option value="mr">Marathi</option>
+        <option value="bn">Bengali</option><option value="ta">Tamil</option>
+        <option value="te">Telugu</option><option value="ml">Malayalam</option>
+        <option value="kn">Kannada</option><option value="gu">Gujarati</option>
+        <option value="pa">Punjabi</option><option value="ur">Urdu</option>
+      </select>
+    </label>
+    <label>Caregiver ID <input id="uid" placeholder="optional, e.g. caregiver_01" size="18"></label>
+    <label>Model <select id="model"><option value="">Default</option></select></label>
+    <label id="cmpwrap" class="hidden"><input type="checkbox" id="compare"> Compare models side by side</label>
+  </div>
+
+  <!-- CHAT -->
+  <section id="tab-chat">
+    <div class="panel">
+      <div id="chatlog"></div>
+    </div>
+    <div class="row">
+      <textarea id="chatin" placeholder="How can I help you today?"></textarea>
+      <button class="primary" id="chatsend">Send</button>
+    </div>
+    <p class="small">Chat gives general support. For facts, providers or sources, use the Research agent, which searches and cites.</p>
+  </section>
+
+  <!-- AGENT -->
+  <section id="tab-agent" class="hidden">
+    <div class="panel">
+      <h3>Goal</h3>
+      <textarea id="goal" placeholder="e.g. Research practical, evidence-based ways to reduce caregiver stress, with sources"></textarea>
+      <div style="margin-top:8px">
+        <input type="text" id="criteria" placeholder="Success criteria (optional, separate with ;)">
+      </div>
+      <div class="row" style="margin-top:8px; align-items:center">
+        <label class="small" style="flex:1"><input type="checkbox" id="allowbook"> Allow the agent to prepare appointment requests (each one still needs your approval)</label>
+        <button class="primary" id="run">Run agent</button>
+      </div>
+    </div>
+    <div id="runout" class="hidden">
+      <div class="panel">
+        <div class="row" style="align-items:center">
+          <div style="flex:0 0 auto"><span id="status" class="badge"></span></div>
+          <div class="small" id="runmeta" style="text-align:right"></div>
+        </div>
+        <div id="alerts" style="margin-top:10px"></div>
+        <div id="approvals"></div>
+        <h3 style="margin-top:12px">Answer</h3>
+        <div id="answer" class="answer"></div>
+      </div>
+      <div class="grid">
+        <div class="panel"><h3>Sources</h3><ul id="sources" class="clean src"></ul></div>
+        <div class="panel"><h3>Verification</h3><div id="verif"></div></div>
+      </div>
+      <div class="grid">
+        <div class="panel"><h3>Tasks</h3><ul id="tasks" class="clean"></ul></div>
+        <div class="panel"><h3>Execution trace</h3><div id="trace" class="trace"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- EVENTS -->
+  <section id="tab-events" class="hidden">
+    <div class="panel">
+      <h3>Find groups, workshops, clubs and gatherings</h3>
+      <div class="row">
+        <select id="etype"><option value="">Any type</option><option value="support_group">Support group</option>
+          <option value="workshop">Workshop</option><option value="club">Club</option><option value="social_gathering">Social gathering</option>
+          <option value="community_meeting">Community meeting</option><option value="activity">Activity</option></select>
+        <select id="eaud"><option value="">Anyone</option><option value="autism">Autism</option><option value="adhd">ADHD</option>
+          <option value="caregivers">Caregivers</option><option value="psychosis">Hearing voices / psychosis</option>
+          <option value="did">Dissociation / DID</option><option value="teens">Teens</option><option value="anxiety">Anxiety</option></select>
+        <label class="small" style="flex:0 0 auto"><input type="checkbox" id="eonline"> Online only</label>
+        <label class="small" style="flex:0 0 auto"><input type="checkbox" id="esensory"> Sensory-friendly</label>
+        <button class="primary" id="esearch">Search</button>
+      </div>
+      <p class="small">You can also ask the Research agent, e.g. "find an online ADHD club and sign me up". It will show you the exact details and wait for your approval.</p>
+      <div id="eprep"></div>
+      <ul id="events" class="clean" style="margin-top:10px"></ul>
+    </div>
+    <div class="panel">
+      <h3>My registrations</h3>
+      <button class="ghost" id="emine">Refresh</button>
+      <ul id="eregs" class="clean" style="margin-top:10px"></ul>
+    </div>
+  </section>
+
+  <!-- BOOKING -->
+  <section id="tab-booking" class="hidden">
+    <div class="alert warn">Only providers verified in the NeuroBridge registry appear here. A reservation is recorded in NeuroBridge only; NeuroBridge does not contact the provider. Please confirm with them directly.</div>
+    <div class="panel">
+      <h3>Find available slots</h3>
+      <div class="row">
+        <input type="text" id="bloc" placeholder="Location">
+        <input type="text" id="bspec" placeholder="Specialty">
+        <input type="number" id="bage" placeholder="Child age">
+        <button class="primary" id="bsearch">Search</button>
+      </div>
+      <ul id="slots" class="clean" style="margin-top:10px"></ul>
+    </div>
+    <div class="panel">
+      <h3>My appointments</h3>
+      <button class="ghost" id="bmine">Refresh</button>
+      <ul id="mine" class="clean" style="margin-top:10px"></ul>
+    </div>
+  </section>
+</main>
+<footer>NeuroBridge is not a doctor and cannot diagnose or change medication. In an emergency call <b>112</b> (India) or your local emergency number. Mental-health support: Tele-MANAS <b>14416</b>.</footer>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+// Minimal safe markdown: escape everything first, then add a small set of tags.
+function inlineMd(t) {
+  return t.replace(/`([^`]+)`/g, "<code>$1</code>")
+    .replace(/\*\*([^*]+)\*\*/g, "<strong>$1</strong>")
+    .replace(/(^|[\s(])\*([^*\s][^*]*)\*(?=[\s).,;:!?]|$)/g, "$1<em>$2</em>")
+    .replace(/(^|[\s(])_([^_\s][^_]*)_(?=[\s).,;:!?]|$)/g, "$1<em>$2</em>")
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>')
+    .replace(/(^|[\s(])(https?:\/\/[^\s<)\]]+)/g, '$1<a href="$2" target="_blank" rel="noopener noreferrer">$2</a>');
+}
+function md(text) {
+  const lines = esc(text || "").split("\n");
+  let html = "", i = 0;
+  const isRow = (l) => /^\s*\|.*\|\s*$/.test(l);
+  const cells = (l) => l.trim().replace(/^\||\|$/g, "").split("|").map(c => inlineMd(c.trim()));
+  while (i < lines.length) {
+    const l = lines[i];
+    if (isRow(l)) {
+      const rows = [];
+      while (i < lines.length && isRow(lines[i])) rows.push(lines[i++]);
+      const sep = rows.length > 1 && /^\s*\|?\s*:?-{2,}/.test(rows[1]);
+      const head = sep ? rows[0] : null, body = sep ? rows.slice(2) : rows;
+      html += "<table>" + (head ? "<tr>" + cells(head).map(c => `<th>${c}</th>`).join("") + "</tr>" : "")
+        + body.map(r => "<tr>" + cells(r).map(c => `<td>${c}</td>`).join("") + "</tr>").join("") + "</table>";
+      continue;
+    }
+    let m;
+    if ((m = l.match(/^\s*(#{1,4})\s+(.*)$/))) { html += `<h4>${inlineMd(m[2])}</h4>`; i++; continue; }
+    if (/^\s*(-{3,}|\*{3,}|_{3,})\s*$/.test(l)) { html += "<hr>"; i++; continue; }
+    if (/^\s*([-*•])\s+/.test(l)) {
+      html += "<ul>";
+      while (i < lines.length && /^\s*([-*•])\s+/.test(lines[i])) html += `<li>${inlineMd(lines[i++].replace(/^\s*[-*•]\s+/, ""))}</li>`;
+      html += "</ul>"; continue;
+    }
+    if (/^\s*\d+[.)]\s+/.test(l)) {
+      html += "<ol>";
+      while (i < lines.length && /^\s*\d+[.)]\s+/.test(lines[i])) html += `<li>${inlineMd(lines[i++].replace(/^\s*\d+[.)]\s+/, ""))}</li>`;
+      html += "</ol>"; continue;
+    }
+    if (!l.trim()) { i++; continue; }
+    const para = [];
+    while (i < lines.length && lines[i].trim() && !isRow(lines[i]) && !/^\s*(#{1,4}\s|[-*•]\s|\d+[.)]\s|-{3,})/.test(lines[i])) para.push(lines[i++]);
+    html += `<p>${inlineMd(para.join("<br>"))}</p>`;
+  }
+  return html;
+}
+let history = [];
+let currentRun = null;
+
+async function api(path, opts = {}) {
+  const res = await fetch(path, {headers: {"Content-Type": "application/json"}, ...opts});
+  let body; try { body = await res.json(); } catch { body = {detail: res.statusText}; }
+  if (!res.ok) throw new Error(body.detail || ("HTTP " + res.status));
+  return body;
+}
+
+document.querySelectorAll("nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll("nav button").forEach(x => x.classList.toggle("active", x === b));
+  ["chat", "agent", "events", "booking"].forEach(t => $("tab-" + t).classList.toggle("hidden", t !== b.dataset.tab));
+});
+
+async function health() {
+  try {
+    const h = await api("/health");
+    const ok = h.llm_providers.length > 0;
+    $("health").innerHTML =
+      `<span class="dot" style="background:${ok ? "#1f6b3a" : "#a3322b"}"></span>LLM: ${esc(h.llm_providers.join(", ") || "none configured")}${h.default_provider ? " (active: " + esc(h.default_provider) + ")" : ""}${h.llm_providers.includes("dev_mock") ? ' <span class="badge warn">development mock</span>' : ""}` +
+      ` &nbsp; <span class="dot" style="background:${h.search_providers.length ? "#1f6b3a" : "#a3322b"}"></span>Search: ${esc(h.search_providers.join(", ") || "none configured")}`;
+  } catch (e) { $("health").textContent = "API unreachable"; }
+}
+
+// ---------------- chat
+function addMsg(role, text, meta) {
+  const d = document.createElement("div");
+  d.className = "msg " + role;
+  d.innerHTML = (role === "bot" ? `<div class="md">${md(text)}</div>` : esc(text)) + (meta ? `<div class="meta">${meta}</div>` : "");
+  $("chatlog").appendChild(d); $("chatlog").scrollTop = 1e9;
+}
+async function loadModels() {
+  try {
+    const p = await api("/providers");
+    const sel = $("model");
+    sel.innerHTML = '<option value="">Default (' + esc(p.default_provider) + ')</option>' +
+      p.models.map(m => `<option value="${esc(m.provider)}">${esc(m.label)}</option>`).join("");
+    const local = p.models.filter(m => m.provider.startsWith("nb_"));
+    if (local.length >= 2) $("cmpwrap").classList.remove("hidden");
+    window.LOCAL_MODELS = local;
+  } catch (e) { /* no LLM configured: keep default */ }
+}
+function addCompare(results) {
+  const d = document.createElement("div");
+  d.className = "msg bot"; d.style.maxWidth = "100%";
+  d.innerHTML = '<div class="cmp">' + results.map(r => `<div class="col"><h5>${esc(r.label || r.provider)}</h5>` +
+    (r.error ? `<span class="badge bad">${esc(r.error)}</span>` : `<div class="md">${md(r.reply)}</div>`) +
+    (r.metadata?.note ? `<div class="meta">${esc(r.metadata.note)}</div>` : "") + "</div>").join("") + "</div>";
+  $("chatlog").appendChild(d); $("chatlog").scrollTop = 1e9;
+}
+async function sendChat() {
+  const text = $("chatin").value.trim(); if (!text) return;
+  $("chatin").value = ""; addMsg("user", text); $("chatsend").disabled = true;
+  if ($("compare").checked && window.LOCAL_MODELS) {
+    try {
+      const r = await api("/chat/compare", {method: "POST", body: JSON.stringify({
+        message: text, history, providers: window.LOCAL_MODELS.map(m => m.provider),
+        preferred_language: $("lang").value || null, user_id: $("uid").value || null})});
+      if (r.emergency) addMsg("bot", r.reply, '<span class="badge warn">safety: ' + esc(r.safety.category) + '</span>');
+      else addCompare(r.results);
+    } catch (e) { addMsg("bot", "Error: " + e.message, '<span class="badge bad">error</span>'); }
+    $("chatsend").disabled = false; return;
+  }
+  try {
+    const r = await api("/chat", {method: "POST", body: JSON.stringify({
+      message: text, history, provider: $("model").value || null,
+      preferred_language: $("lang").value || null, user_id: $("uid").value || null})});
+    const s = r.metadata?.safety || {};
+    let meta = r.provider ? "via " + esc(r.metadata?.label || r.provider) : "";
+    if (s.category && s.category !== "normal") meta += ` · <span class="badge warn">safety: ${esc(s.category)}</span>`;
+    if (s.output?.flagged) meta += ` · <span class="badge warn">reply adjusted for safety</span>`;
+    if (r.metadata?.fallback_used) meta += " · fallback provider used";
+    if (r.metadata?.continued) meta += " · long reply, continued automatically";
+    if (r.metadata?.truncated) meta += ' · <span class="badge warn">reply may be incomplete</span>';
+    addMsg("bot", r.reply, meta);
+    history.push({role: "user", content: text}, {role: "assistant", content: r.reply});
+  } catch (e) { addMsg("bot", "Error: " + e.message, '<span class="badge bad">error</span>'); }
+  $("chatsend").disabled = false;
+}
+$("chatsend").onclick = sendChat;
+$("chatin").addEventListener("keydown", e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); } });
+
+// ---------------- agent
+const STATUS_CLASS = {COMPLETED: "good", PARTIAL: "warn", WAITING_APPROVAL: "warn",
+  NO_EVIDENCE: "bad", FAILED: "bad", EMERGENCY_GUIDANCE: "bad", RUNNING: ""};
+const STATUS_TEXT = {COMPLETED: "Goal complete", PARTIAL: "Partially complete",
+  WAITING_APPROVAL: "Waiting for your approval", NO_EVIDENCE: "No sources found",
+  FAILED: "Failed", EMERGENCY_GUIDANCE: "Emergency guidance", RUNNING: "Running"};
+
+function linkify(text) {
+  return esc(text).replace(/(https?:\/\/[^\s<)\]]+)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+}
+
+function renderRun(r) {
+  currentRun = r;
+  $("runout").classList.remove("hidden");
+  $("status").className = "badge " + (STATUS_CLASS[r.status] || "");
+  $("status").textContent = STATUS_TEXT[r.status] || r.status;
+  $("runmeta").textContent = `run ${r.run_id} · ${r.tool_calls} tool calls · ${r.rounds} replanning round(s)`;
+  $("alerts").innerHTML = (r.errors || []).map(e => `<div class="alert bad">${esc(e)}</div>`).join("") +
+    (r.goal_gate && r.goal_gate.unmet_requirements?.length ? `<div class="alert warn">Not yet met: ${esc(r.goal_gate.unmet_requirements.join("; "))}</div>` : "");
+  const pending = (r.approvals || []).filter(a => a.status === "pending");
+  $("approvals").innerHTML = pending.map(a => `
+    <div class="approval"><b>Approval needed:</b> ${esc(a.task_name || "")}<br>
+      <span class="small">${esc(a.reason)}</span><br>
+      ${a.summary ? `<span class="small"><b>${esc(a.summary.title)}</b> · ${esc(a.summary.start)} · ${esc(a.summary.where)} · ${esc(a.summary.fee)} · attendees ${a.summary.attendees}${a.summary.demo_listing ? " · DEMO LISTING" : ""}</span><br>`
+        : a.arguments ? `<span class="small">Details: ${esc(JSON.stringify(a.arguments))}</span><br>` : ""}
+      <button class="primary" onclick="decide('${a.approval_id}', true)">Approve</button>
+      <button class="ghost" onclick="decide('${a.approval_id}', false)">Decline</button>
+    </div>`).join("");
+  $("answer").innerHTML = `<div class="md">${md(r.answer || "(no answer)")}</div>`;
+  $("sources").innerHTML = (r.sources || []).map(s => `<li><b>[${esc(s.id)}]</b> ${esc(s.title || "Untitled")}
+      <span class="badge" style="margin-left:4px">${esc(s.category)}</span>${s.cited ? ' <span class="badge good">cited</span>' : ""}${s.page_read ? ' <span class="badge">page read</span>' : ""}
+      <br><a href="${esc(s.url)}" target="_blank" rel="noopener noreferrer">${esc(s.url)}</a></li>`).join("") || '<li class="small">No sources retrieved.</li>';
+  const v = r.verification;
+  if (v) {
+    const d = v.deterministic || {}, l = v.llm || {};
+    $("verif").innerHTML = `<p><span class="badge ${v.passed ? "good" : "bad"}">${v.passed ? "passed" : "did not pass"}</span> score ${esc(v.score)} · ${esc(v.decision || "")}</p>
+      <ul class="clean">
+        <li>Grounding: ${d.critical_issues?.length || 0} critical, ${d.unsupported_claims?.length || 0} unsupported names${v.redacted_statements ? `, ${v.redacted_statements} redacted` : ""}</li>
+        ${(d.critical_issues || []).concat(d.unsupported_claims || []).map(i => `<li class="small">⚠ ${esc(i.type)}: ${esc(JSON.stringify(i.value))}</li>`).join("")}
+        <li>Citations used: ${esc((d.citations_used || []).join(", ") || "none")}</li>
+        <li>LLM reviewer: ${l.available ? (l.passed ? "passed" : "flagged issues") + ` (score ${esc(l.score)})` : "unavailable"}</li>
+        ${v.output_safety ? `<li>Safety: ${esc(v.output_safety.action)}</li>` : ""}
+      </ul>`;
+  } else {
+    $("verif").innerHTML = r.safety && r.safety.category !== "normal" ? `<p>Safety category: <b>${esc(r.safety.category)}</b>. No research was run.</p>` : '<p class="small">Not verified (no answer was synthesized).</p>';
+  }
+  $("tasks").innerHTML = (r.tasks || []).map(t => `<li><span class="badge ${t.status === "completed" ? "good" : t.status === "failed" || t.status === "cancelled" ? "bad" : "warn"}">${esc(t.status)}</span> ${esc(t.name)}${t.tool ? ` <span class="small">· ${esc(t.tool)}</span>` : ""}${t.revision ? ` <span class="small">· plan rev ${t.revision}</span>` : ""}${t.error ? `<br><span class="small" style="color:var(--bad)">${esc(t.error)}</span>` : ""}</li>`).join("") || '<li class="small">No tasks.</li>';
+  $("trace").innerHTML = (r.trace || []).map(e => `<div><span class="phase">${esc(e.phase)}</span> ${esc(e.message)}${e.error ? ` — <span style="color:var(--bad)">${esc(e.error)}</span>` : ""}</div>`).join("");
+}
+
+async function runAgent() {
+  const goal = $("goal").value.trim(); if (!goal) return;
+  $("run").disabled = true; $("run").textContent = "Working…";
+  try {
+    const crit = $("criteria").value.split(";").map(s => s.trim()).filter(Boolean);
+    renderRun(await api("/agent/run", {method: "POST", body: JSON.stringify({
+      goal, success_criteria: crit, user_id: $("uid").value || null,
+      preferred_language: $("lang").value || null, allow_booking_actions: $("allowbook").checked})}));
+  } catch (e) {
+    $("runout").classList.remove("hidden");
+    $("status").className = "badge bad"; $("status").textContent = "Error";
+    $("alerts").innerHTML = `<div class="alert bad">${esc(e.message)}</div>`;
+  }
+  $("run").disabled = false; $("run").textContent = "Run agent";
+}
+$("run").onclick = runAgent;
+
+async function decide(approvalId, approved) {
+  try {
+    renderRun(await api(`/agent/runs/${currentRun.run_id}/approve`, {method: "POST",
+      body: JSON.stringify({approval_id: approvalId, approved, reviewed_by: $("uid").value || "caregiver"})}));
+  } catch (e) { $("alerts").innerHTML = `<div class="alert bad">${esc(e.message)}</div>`; }
+}
+window.decide = decide;
+
+// ---------------- booking
+async function searchSlots() {
+  const q = new URLSearchParams();
+  if ($("bloc").value) q.set("location", $("bloc").value);
+  if ($("bspec").value) q.set("specialty", $("bspec").value);
+  if ($("bage").value) q.set("child_age", $("bage").value);
+  try {
+    const r = await api("/booking/slots?" + q);
+    $("slots").innerHTML = r.slots.map(s => `<li><b>${esc(s.provider_name)}</b> · ${esc(s.profession)} · ${esc(s.location)}<br>
+      ${esc(s.start_time)} → ${esc(s.end_time)} ${s.fee_amount ? "· fee " + esc(s.fee_amount) : ""}
+      <button class="ghost" onclick="requestSlot(${s.slot_id})">Request this slot</button></li>`).join("") || '<li class="small">No available slots from verified providers.</li>';
+  } catch (e) { $("slots").innerHTML = `<li class="alert bad">${esc(e.message)}</li>`; }
+}
+async function requestSlot(slotId) {
+  const uid = $("uid").value; if (!uid) { alertBox("Enter your caregiver ID first."); return; }
+  const r = await api("/booking/request", {method: "POST", body: JSON.stringify({slot_id: slotId, caregiver_user_id: uid, child_age: $("bage").value ? +$("bage").value : null})});
+  alertBox(r.message); loadMine();
+}
+async function approveAppt(id) {
+  const uid = $("uid").value;
+  try {
+    const r = await api("/booking/approve", {method: "POST", body: JSON.stringify({appointment_id: id, caregiver_user_id: uid, explicit_approval: true})});
+    alertBox(r.success ? `${r.message} Code ${r.confirmation_code}. ${r.confirmation_scope}` : r.message);
+  } catch (e) { alertBox(e.message); }
+  loadMine(); searchSlots();
+}
+async function cancelAppt(id) {
+  const uid = $("uid").value;
+  try { const r = await api("/booking/cancel", {method: "POST", body: JSON.stringify({appointment_id: id, caregiver_user_id: uid, explicit_approval: true})}); alertBox(r.message); }
+  catch (e) { alertBox(e.message); }
+  loadMine(); searchSlots();
+}
+function alertBox(msg) { $("mine").insertAdjacentHTML("beforebegin", `<div class="alert warn">${esc(msg)}</div>`); }
+async function loadMine() {
+  const uid = $("uid").value; if (!uid) { $("mine").innerHTML = '<li class="small">Enter your caregiver ID above.</li>'; return; }
+  const r = await api("/booking/mine/" + encodeURIComponent(uid));
+  $("mine").innerHTML = r.appointments.map(a => `<li><b>${esc(a.provider_name)}</b> · ${esc(a.start_time)}
+    <span class="badge ${a.booking_status === "confirmed" ? "good" : a.booking_status === "cancelled" ? "bad" : "warn"}">${esc(a.booking_status)}</span>
+    ${a.confirmation_code ? `<span class="small">code ${esc(a.confirmation_code)}</span>` : ""}
+    ${a.booking_status === "pending_approval" ? `<button class="primary" onclick="approveAppt(${a.appointment_id})">I approve this booking</button>` : ""}
+    ${["pending_approval", "confirmed"].includes(a.booking_status) ? `<button class="ghost" onclick="cancelAppt(${a.appointment_id})">Cancel</button>` : ""}</li>`).join("") || '<li class="small">No appointments.</li>';
+}
+window.requestSlot = requestSlot; window.approveAppt = approveAppt; window.cancelAppt = cancelAppt;
+$("bsearch").onclick = searchSlots; $("bmine").onclick = loadMine;
+
+// ---------------- events
+const ACC = {sensory_friendly: "sensory-friendly", quiet_room: "quiet room", wheelchair_access: "wheelchair access",
+  captioning: "captions", sign_language: "sign language", low_lighting: "low lighting", online: "online"};
+const fmtTime = (t) => new Date(t).toLocaleString([], {weekday: "short", day: "numeric", month: "short", hour: "2-digit", minute: "2-digit"});
+async function searchEvents() {
+  const q = new URLSearchParams();
+  if ($("etype").value) q.set("event_type", $("etype").value);
+  if ($("eaud").value) q.set("audience", $("eaud").value);
+  if ($("eonline").checked) q.set("online", "true");
+  if ($("esensory").checked) q.set("accessibility", "sensory_friendly");
+  try {
+    const r = await api("/events?" + q);
+    $("events").innerHTML = r.events.map(e => `<li><b>${esc(e.title)}</b>
+      ${e.is_demo ? '<span class="badge warn">Demo listing — not a real event</span>' : ""}<br>
+      <span class="small">${esc(e.event_type.replace("_", " "))} · ${esc(fmtTime(e.start_time))} · ${e.is_online ? "Online" : esc(e.location)}
+      · ${e.fee_amount ? esc(e.fee_amount) + " INR" : "Free"} · ${e.seats_left} of ${e.capacity} seats left</span><br>
+      <span class="small">${esc(e.description || "")}</span><br>
+      ${e.accessibility.map(a => `<span class="badge">${esc(ACC[a] || a)}</span>`).join(" ")}
+      <button class="ghost" onclick="prepareEvent(${e.event_id})">${e.seats_left ? "Register" : "Join waitlist"}</button></li>`).join("")
+      || '<li class="small">No upcoming events match. Try fewer filters.</li>';
+  } catch (e) { $("events").innerHTML = `<li class="alert bad">${esc(e.message)}</li>`; }
+}
+async function prepareEvent(id) {
+  const uid = $("uid").value; if (!uid) { $("eprep").innerHTML = '<div class="alert warn">Enter your Caregiver / user ID at the top first.</div>'; return; }
+  const p = await api(`/events/${id}/prepare?attendees=1`);
+  if (!p.success) { $("eprep").innerHTML = `<div class="alert bad">${esc(p.message)}</div>`; return; }
+  const s = p.summary;
+  $("eprep").innerHTML = `<div class="approval"><b>Please check these details:</b><br>
+    ${esc(s.title)} (${esc(s.type.replace("_", " "))})<br>${esc(fmtTime(s.start))} – ${esc(fmtTime(s.end))}<br>
+    ${esc(s.where)} · Fee: ${esc(s.fee)} · Attendees: ${s.attendees} · Organiser: ${esc(s.organizer || "")}
+    ${s.demo_listing ? '<br><span class="badge warn">Demo listing — not a real event</span>' : ""}<br>
+    <input type="text" id="eneeds" placeholder="Anything that would help you attend? (optional, e.g. quiet seat)" style="margin:6px 0">
+    <button class="primary" onclick="registerEvent(${p.event_id}, '${p.details_hash}')">I approve this registration</button>
+    <button class="ghost" onclick="$('eprep').innerHTML=''">Cancel</button></div>`;
+}
+async function registerEvent(id, hash) {
+  try {
+    const r = await api(`/events/${id}/register`, {method: "POST", body: JSON.stringify({
+      user_id: $("uid").value, attendees: 1, needs: $("eneeds").value || null, approved_details_hash: hash, explicit_approval: true})});
+    $("eprep").innerHTML = `<div class="alert ${r.success ? "warn" : "bad"}">${esc(r.message)}${r.confirmation_code ? " Code " + esc(r.confirmation_code) + "." : ""} ${esc(r.scope || "")}</div>`;
+  } catch (e) { $("eprep").innerHTML = `<div class="alert bad">${esc(e.message)}</div>`; }
+  searchEvents(); loadRegs();
+}
+async function cancelReg(id) {
+  await api(`/events/registrations/${id}/cancel`, {method: "POST", body: JSON.stringify({user_id: $("uid").value})});
+  searchEvents(); loadRegs();
+}
+async function loadRegs() {
+  const uid = $("uid").value; if (!uid) { $("eregs").innerHTML = '<li class="small">Enter your user ID at the top.</li>'; return; }
+  const r = await api("/events/mine/" + encodeURIComponent(uid));
+  $("eregs").innerHTML = r.registrations.map(g => `<li><b>${esc(g.title)}</b> · ${esc(fmtTime(g.start_time))}
+    <span class="badge ${g.status === "confirmed" ? "good" : g.status === "cancelled" ? "bad" : "warn"}">${esc(g.status)}</span>
+    ${g.confirmation_code ? `<span class="small">code ${esc(g.confirmation_code)}</span>` : ""}
+    ${g.is_demo ? '<span class="badge warn">demo</span>' : ""}
+    ${["confirmed", "waitlisted"].includes(g.status) ? `<button class="ghost" onclick="cancelReg(${g.registration_id})">Cancel</button>` : ""}</li>`).join("")
+    || '<li class="small">No registrations yet.</li>';
+}
+window.prepareEvent = prepareEvent; window.registerEvent = registerEvent; window.cancelReg = cancelReg;
+$("esearch").onclick = searchEvents; $("emine").onclick = loadRegs;
+document.querySelector('nav button[data-tab="events"]').addEventListener("click", () => { searchEvents(); loadRegs(); });
+
+health();
+loadModels();
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+# Core
+fastapi>=0.110
+uvicorn>=0.27
+pydantic>=2
+requests>=2.31
+beautifulsoup4>=4.12
+# LLM providers (install the ones you use)
+groq
+google-genai
+# Search / page extraction (Tavily recommended; ddgs is a keyless fallback)
+tavily-python
+ddgs
+# Tests
+pytest
+httpx
+# Optional: MCP server (agent/mcp). Works with mcp 1.x or 2.x; do not change an
+# installed version just for NeuroBridge.
+# mcp

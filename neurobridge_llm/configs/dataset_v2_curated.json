@@ -1,0 +1,58 @@
+{
+  "version": "dataset_v2_curated",
+  "require_human_review": false,
+  "reviews_file": "data/reviews/decisions.jsonl",
+  "sources": [
+    {
+      "set": "seed_v2_revised",
+      "role": "train_candidate",
+      "author": "assistant",
+      "path": "data/raw/seed/neurobridge_seed_v2_revised.jsonl"
+    },
+    {
+      "set": "v2_longform",
+      "role": "train_candidate",
+      "author": "assistant",
+      "glob": "data/raw/v2_longform/by_category/*.jsonl",
+      "domain_from_file": true,
+      "id_prefix": "v2"
+    },
+    {
+      "set": "neurodivergent_mh_v1",
+      "role": "train_candidate",
+      "author": "assistant",
+      "path": "data/raw/additions/neurodivergent_mh_v1.jsonl"
+    },
+    {
+      "set": "diversity_prompts_440",
+      "role": "eval_prompts",
+      "author": "assistant",
+      "glob": "data/raw/diversity_prompts/neurobridge_diversity_batch*.jsonl"
+    }
+  ],
+  "quality": {
+    "min_prompt_chars": 15,
+    "min_response_chars": 120,
+    "max_response_chars": 3000,
+    "max_list_items": 8,
+    "near_dup_threshold": 0.8,
+    "max_shared_openings": 4,
+    "template_line_ratio": 0.1,
+    "template_line_reuse": 5
+  },
+  "split": {
+    "ratios": [
+      0.85,
+      0.15
+    ],
+    "names": [
+      "train",
+      "validation"
+    ],
+    "seed": 42
+  },
+  "eval": {
+    "per_category": 2,
+    "seed": 7
+  }
+}

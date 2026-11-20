@@ -1,0 +1,24 @@
+# Render Blueprint: New -> Blueprint -> pick this repository.
+services:
+  - type: web
+    name: neurobridge
+    runtime: docker
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: GROQ_API_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: TAVILY_API_KEY
+        sync: false
+      - key: NEUROBRIDGE_ADMIN_EMAIL
+        value: admin@neurobridge.local
+      - key: NEUROBRIDGE_ADMIN_PASSWORD
+        sync: false
+      - key: NEUROBRIDGE_DEMO_PASSWORD
+        sync: false
+      - key: NEUROBRIDGE_ADMIN_TOKEN
+        generateValue: true
+      - key: NEUROBRIDGE_SEED_DEMO_EVENTS
+        value: "1"

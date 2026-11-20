@@ -1,0 +1,13 @@
+{
+  "run_name": "sft_v2_12k",
+  "base_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "dataset_dir": "build/dataset_v2_with_12k",
+  "output_dir": "runs/sft_v2_12k",
+  "seed": 42,
+  "max_length": 1024,
+  "lora": {"r": 16, "alpha": 32, "dropout": 0.05,
+           "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]},
+  "training": {"epochs": 2, "batch_size": 2, "grad_accum": 4, "learning_rate": 0.0001,
+               "scheduler": "cosine", "warmup_ratio": 0.05, "weight_decay": 0.0},
+  "_notes": "776 train examples (768 repaired-template + curated) -> ~97 steps/epoch on a T4 (~25-40 min/epoch). Watch validation loss; templated data overfits fast."
+}

@@ -1,0 +1,11 @@
+.git
+**/__pycache__
+**/*.sqlite3*
+.pytest_cache
+backups
+tests
+data
+docs
+neurobridge_llm/build
+neurobridge_llm/runs
+*.ipynb

@@ -1,0 +1,24 @@
+{
+  "run_name": "sft_v1",
+  "base_model": "Qwen/Qwen2.5-1.5B-Instruct",
+  "dataset_dir": "build/dataset_v1",
+  "output_dir": "runs/sft_v1",
+  "seed": 42,
+  "max_length": 1024,
+  "lora": {
+    "r": 16,
+    "alpha": 32,
+    "dropout": 0.05,
+    "target_modules": ["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"]
+  },
+  "training": {
+    "epochs": 3,
+    "batch_size": 1,
+    "grad_accum": 4,
+    "learning_rate": 0.0001,
+    "scheduler": "cosine",
+    "warmup_ratio": 0.1,
+    "weight_decay": 0.0
+  },
+  "_notes": "64 train examples -> 16 optimizer steps/epoch. With so little data keep epochs low and pick the checkpoint by validation loss; then evaluate with nbllm.evaluate + nbllm.human_eval."
+}

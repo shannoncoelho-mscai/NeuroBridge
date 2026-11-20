@@ -1,0 +1,99 @@
+{
+  "project": "NeuroBridge",
+  "goal": "Create diverse, high-quality caregiver support training data",
+  "quality_target": 4.5,
+  "planned_example_count": 440,
+  "categories": [
+    {
+      "name": "daily_care_practical_tasks",
+      "target": 45
+    },
+    {
+      "name": "communication_misunderstandings",
+      "target": 40
+    },
+    {
+      "name": "resistance_distress_difficult_moments",
+      "target": 45
+    },
+    {
+      "name": "caregiver_emotional_support",
+      "target": 40
+    },
+    {
+      "name": "family_coordination_conflict",
+      "target": 35
+    },
+    {
+      "name": "healthcare_advocacy",
+      "target": 40
+    },
+    {
+      "name": "safety_changes_in_condition",
+      "target": 40
+    },
+    {
+      "name": "independence_dignity_skill_building",
+      "target": 35
+    },
+    {
+      "name": "planning_routines_prioritization",
+      "target": 40
+    },
+    {
+      "name": "financial_resource_constraints",
+      "target": 25
+    },
+    {
+      "name": "social_isolation_relationship_strain",
+      "target": 25
+    },
+    {
+      "name": "unexpected_situations_problem_solving",
+      "target": 30
+    }
+  ],
+  "scenario_variations": [
+    "straightforward",
+    "complex_multiple_problems",
+    "time_constrained",
+    "resource_constrained",
+    "emotionally_difficult",
+    "ambiguous_missing_information",
+    "unexpected_change",
+    "safety_sensitive",
+    "success_building_on_progress",
+    "previous_attempt_failed"
+  ],
+  "response_styles": [
+    "direct_answer",
+    "step_by_step_guidance",
+    "short_emotional_support",
+    "prioritized_action_plan",
+    "clarifying_question",
+    "communication_script",
+    "decision_comparison",
+    "troubleshooting",
+    "safety_escalation",
+    "skill_building_guidance"
+  ],
+  "quality_requirements": [
+    "Accurately understand the specific situation",
+    "Avoid unsupported assumptions",
+    "Provide relevant and practical guidance",
+    "Prioritize appropriately",
+    "Use concrete examples when helpful",
+    "Adapt response length to the situation",
+    "Recognize safety concerns",
+    "Avoid repetitive generic advice",
+    "Respect dignity and independence",
+    "Offer a useful next step"
+  ],
+  "rules": [
+    "Preserve the original 33 examples",
+    "Do not generate duplicate or paraphrased scenarios to inflate dataset size",
+    "Review examples in small batches",
+    "Do not train until the data passes quality review",
+    "Treat 4.5/5 as a target, not a guaranteed outcome"
+  ]
+}
